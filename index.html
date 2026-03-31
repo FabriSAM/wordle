@@ -112,6 +112,11 @@
     user-select: none;
   }
   .logo span { color: var(--accent); }
+  #version {
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    font-size: 0.58rem; color: var(--border); letter-spacing: 0.08em;
+    user-select: none;
+  }
   #len-badge {
     position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
     background: var(--border); color: var(--muted);
@@ -266,6 +271,7 @@
 </div>
 
 <header>
+  <div id="version">v4.1</div>
   <div class="logo">P<span>A</span>ROLE</div>
   <div id="len-badge">— lettere</div>
 </header>
@@ -402,10 +408,33 @@ function defStats() { return {played:0, won:0, streak:0, max:0, dist:{1:0,2:0,3:
 function saveStats(s) { try { localStorage.setItem('parole-v4', JSON.stringify(s)); } catch {} }
 
 // ── INIT ──────────────────────────────────────────────────────
-function init() {
+function init(forceNew = false) {
+  // Se non è una nuova partita forzata, prova a ripristinare la parola in corso
+  const saved = !forceNew && sessionStorage.getItem('parole-current');
+  if(saved) {
+    try {
+      const s = JSON.parse(saved);
+      // Usa la parola salvata solo se è nel dizionario caricato (evita stati corrotti)
+      if(s.target && s.wordLen && DICT[s.wordLen] && DICT[s.wordLen].has(s.target)) {
+        wordLen = s.wordLen;
+        target  = s.target;
+        guesses = []; currentRow = 0; currentCol = 0;
+        gameOver = false; keyStates = {};
+        document.getElementById('len-badge').innerHTML = `<strong>${wordLen}</strong> lettere`;
+        document.getElementById('overlay').classList.remove('open');
+        buildBoard();
+        buildKeyboard();
+        applySize();
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // Nuova parola
   const lens = [5, 6, 7].filter(n => POOL[n].length > 0);
   wordLen = lens[Math.floor(Math.random() * lens.length)];
   target  = POOL[wordLen][Math.floor(Math.random() * POOL[wordLen].length)];
+  sessionStorage.setItem('parole-current', JSON.stringify({ target, wordLen }));
 
   guesses = []; currentRow = 0; currentCol = 0;
   gameOver = false; keyStates = {};
@@ -625,7 +654,10 @@ function openModal(won) {
   document.getElementById('overlay').classList.add('open');
 }
 
-document.getElementById('play-again').addEventListener('click', init);
+document.getElementById('play-again').addEventListener('click', () => {
+  sessionStorage.removeItem('parole-current');
+  init(true);
+});
 document.getElementById('close-modal').addEventListener('click', () =>
   document.getElementById('overlay').classList.remove('open'));
 document.getElementById('overlay').addEventListener('click', e => {
