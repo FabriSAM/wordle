@@ -309,6 +309,16 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════
+//  SERVICE WORKER — cache offline (dizionario + asset statici)
+// ═══════════════════════════════════════════════════════════════
+
+if('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  DIZIONARIO — fetch da GitHub napolux/paroleitaliane
 // ═══════════════════════════════════════════════════════════════
 
